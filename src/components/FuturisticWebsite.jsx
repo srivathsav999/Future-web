@@ -118,53 +118,86 @@ const CameraController = ({ scrollProgress }) => {
   return null
 }
 
-// Animated Background Particles
+// Minimal Ambient Particles Component
+const AmbientParticles = ({ scrollProgress }) => {
+  const particlesRef = useRef()
+  
+  useFrame((state) => {
+    if (particlesRef.current) {
+      particlesRef.current.rotation.y = state.clock.elapsedTime * 0.02
+    }
+  })
+  
+  return (
+    <group ref={particlesRef}>
+      {[...Array(3)].map((_, i) => {
+        const orbitRadius = 80 + i * 40
+        const angle = (i / 3) * Math.PI * 2
+        const time = Date.now() * 0.001
+        const animatedAngle = angle + time * 0.01
+        
+        return (
+          <mesh
+            key={i}
+            position={[
+              Math.cos(animatedAngle) * orbitRadius,
+              Math.sin(animatedAngle) * orbitRadius * 0.3,
+              Math.sin(animatedAngle * 0.5) * 20
+            ]}
+          >
+            <sphereGeometry args={[0.3]} />
+            <meshBasicMaterial
+              color="#4a5568"
+              transparent
+              opacity={0.2}
+            />
+          </mesh>
+        )
+      })}
+    </group>
+  )
+}
+
+// Clean Background Particles
 const AnimatedParticles = ({ scrollProgress }) => {
   const particlesRef = useRef()
   
-  const particleCount = 400
+  const particleCount = 120
   const positions = useMemo(() => {
     const pos = new Float32Array(particleCount * 3)
     for (let i = 0; i < particleCount; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 200  // Wider X range to cover all pages
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 200  // Wider Y range to cover all pages
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 150  // Deeper Z range for more depth
+      pos[i * 3] = (Math.random() - 0.5) * 200
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 200  
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 100  
     }
     return pos
   }, [])
   
   useFrame((state) => {
     if (particlesRef.current) {
-      // Calculate transition intensity for more dramatic effects
-      const pageProgress = (scrollProgress * 3) % 1
-      const transitionIntensity = Math.sin(pageProgress * Math.PI)
-      
-      // More dynamic rotation based on scroll progress and transitions
-      const baseRotationSpeed = 0.05
-      const dynamicSpeed = baseRotationSpeed + (scrollProgress * 0.08) + (transitionIntensity * 0.05)
-      particlesRef.current.rotation.y = state.clock.elapsedTime * dynamicSpeed
-      particlesRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.02) * 0.1
-      
-      // Enhanced movement during transitions with flow effect
-      const flowEffect = Math.sin(scrollProgress * Math.PI * 6) * 2 * transitionIntensity
-      particlesRef.current.position.z = flowEffect
-      particlesRef.current.position.x = Math.cos(scrollProgress * Math.PI * 3) * 5 * transitionIntensity
+      particlesRef.current.rotation.y = state.clock.elapsedTime * 0.015
     }
   })
   
   return (
-    <points ref={particlesRef}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={particleCount} array={positions} itemSize={3} />
-      </bufferGeometry>
-      <pointsMaterial 
-        color={`hsl(${200 + scrollProgress * 160}, ${70 + Math.sin(scrollProgress * Math.PI * 3) * 15}%, ${60 + Math.cos(scrollProgress * Math.PI * 4) * 15}%)`}
-        size={0.06 + Math.sin(scrollProgress * Math.PI * 6) * 0.03}
-        transparent
-        opacity={0.7 + Math.sin(scrollProgress * Math.PI * 8) * 0.15}
-        sizeAttenuation
-      />
-    </points>
+    <>
+      {/* Single clean particle layer */}
+      <points ref={particlesRef}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" count={particleCount} array={positions} itemSize={3} />
+        </bufferGeometry>
+        <pointsMaterial 
+          color="#64748b"
+          size={0.03}
+          transparent
+          opacity={0.4}
+          sizeAttenuation
+        />
+      </points>
+      
+      {/* Minimal ambient particles */}
+      <AmbientParticles scrollProgress={scrollProgress} />
+    </>
   )
 }
 
@@ -181,9 +214,9 @@ const Page1 = ({ scrollProgress }) => {
   
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
-      {/* Main display screen */}
+      {/* Main display screen with rounded corners */}
       <mesh position={[0, 0, 0]}>
-        <planeGeometry args={[14, 10]} />
+        <planeGeometry args={[12, 8]} />
         <meshStandardMaterial 
           color="#1a1a2e"
           transparent
@@ -193,13 +226,21 @@ const Page1 = ({ scrollProgress }) => {
         />
       </mesh>
       
-      {/* Glowing frame */}
+      {/* Multi-layer glowing frame for depth */}
       <mesh position={[0, 0, -0.1]}>
-        <planeGeometry args={[14.5, 10.5]} />
+        <planeGeometry args={[12.3, 8.3]} />
         <meshBasicMaterial 
           color="#00ffff"
           transparent
-          opacity={0.2}
+          opacity={0.15}
+        />
+      </mesh>
+      <mesh position={[0, 0, -0.2]}>
+        <planeGeometry args={[12.6, 8.6]} />
+        <meshBasicMaterial 
+          color="#00ffff"
+          transparent
+          opacity={0.08}
         />
       </mesh>
       
@@ -218,8 +259,8 @@ const Page1 = ({ scrollProgress }) => {
         position={[0, 0, 0.1]} 
         center
         style={{ 
-          width: '1400px', 
-          height: '1000px', 
+          width: '1200px', 
+          height: '800px', 
           pointerEvents: 'none'
         }}
       >
@@ -230,12 +271,15 @@ const Page1 = ({ scrollProgress }) => {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          background: 'linear-gradient(135deg, rgba(26,26,46,0.9) 0%, rgba(16,16,35,0.9) 100%)',
+          background: 'linear-gradient(135deg, rgba(26,26,46,0.95) 0%, rgba(16,16,35,0.95) 100%)',
+          backdropFilter: 'blur(20px)',
           color: 'white',
           fontFamily: '"SF Pro Display", system-ui, sans-serif',
           textAlign: 'center',
-          padding: '60px',
-          borderRadius: '20px'
+          padding: '50px',
+          borderRadius: '30px',
+          border: '1px solid rgba(0, 255, 255, 0.2)',
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
         }}>
           <h1 style={{
             fontSize: '4rem',
@@ -259,14 +303,17 @@ const Page1 = ({ scrollProgress }) => {
           </p>
           <div style={{
             padding: '1rem 2rem',
-            background: 'rgba(0, 255, 255, 0.1)',
-            border: '2px solid #00ffff',
+            background: 'linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 200, 255, 0.1) 100%)',
+            border: '2px solid transparent',
+            borderImage: 'linear-gradient(45deg, #00ffff, #00d4ff) 1',
             borderRadius: '50px',
             color: '#00ffff',
             fontWeight: '600',
             fontSize: '1.1rem',
             cursor: 'pointer',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 8px 32px rgba(0, 255, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
           }}>
             Scroll to Explore
           </div>
@@ -285,11 +332,11 @@ const Page2 = ({ scrollProgress }) => {
       groupRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.2) * 0.05
     }
   })
-  
+
   return (
     <group ref={groupRef} position={[80, 0, 0]}>
       <mesh position={[0, 0, 0]}>
-        <planeGeometry args={[14, 10]} />
+        <planeGeometry args={[12, 8]} />
         <meshStandardMaterial 
           color="#2d1b69"
           transparent
@@ -299,25 +346,43 @@ const Page2 = ({ scrollProgress }) => {
         />
       </mesh>
       
-      {/* Animated rings */}
+      {/* Multi-layer frame for Page 2 */}
+      <mesh position={[0, 0, -0.1]}>
+        <planeGeometry args={[12.3, 8.3]} />
+        <meshBasicMaterial 
+          color="#ff6b6b"
+          transparent
+          opacity={0.15}
+        />
+      </mesh>
+      <mesh position={[0, 0, -0.2]}>
+        <planeGeometry args={[12.6, 8.6]} />
+        <meshBasicMaterial 
+          color="#ff6b6b"
+          transparent 
+          opacity={0.08}
+        />
+      </mesh>
+      
+      {/* Animated rings - adjusted for smaller page */}
       {[...Array(5)].map((_, i) => (
-        <mesh key={i} position={[0, 0, -0.5 + i * 0.1]} rotation={[0, 0, 0]}>
-          <ringGeometry args={[2 + i * 0.5, 2.1 + i * 0.5, 32]} />
+        <mesh key={i} position={[0, 0, -0.3 + i * 0.1]} rotation={[0, 0, 0]}>
+          <ringGeometry args={[1.5 + i * 0.4, 1.6 + i * 0.4, 32]} />
           <meshBasicMaterial 
             color="#ff6b6b" 
             transparent 
-            opacity={0.3 - i * 0.05}
+            opacity={0.4 - i * 0.06}
             side={THREE.DoubleSide}
-          />
+        />
         </mesh>
       ))}
-      
-      <Html 
+
+        <Html
         position={[0, 0, 0.1]} 
         center
-        style={{ 
-          width: '1400px', 
-          height: '1000px', 
+          style={{
+          width: '1200px', 
+          height: '800px', 
           pointerEvents: 'none'
         }}
       >
@@ -328,11 +393,14 @@ const Page2 = ({ scrollProgress }) => {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          background: 'linear-gradient(135deg, rgba(45,27,105,0.9) 0%, rgba(25,15,60,0.9) 100%)',
-          color: 'white',
+          background: 'linear-gradient(135deg, rgba(45,27,105,0.95) 0%, rgba(25,15,60,0.95) 100%)',
+          backdropFilter: 'blur(20px)',
+            color: 'white',
           fontFamily: '"SF Pro Display", system-ui, sans-serif',
-          padding: '60px',
-          borderRadius: '20px'
+          padding: '50px',
+          borderRadius: '30px',
+          border: '1px solid rgba(255, 107, 107, 0.3)',
+          boxShadow: '0 25px 50px rgba(255, 50, 50, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
         }}>
           <h2 style={{
             fontSize: '3rem',
@@ -350,43 +418,51 @@ const Page2 = ({ scrollProgress }) => {
           }}>
             <div style={{
               padding: '2rem',
-              background: 'rgba(255, 107, 107, 0.1)',
-              borderRadius: '20px',
-              border: '1px solid rgba(255, 107, 107, 0.3)'
+              background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(255, 50, 50, 0.1) 100%)',
+              borderRadius: '25px',
+              border: '1px solid rgba(255, 107, 107, 0.4)',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 8px 32px rgba(255, 107, 107, 0.2)'
             }}>
               <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#ff6b6b' }}>3D Immersion</h3>
               <p style={{ opacity: 0.9 }}>Full 3D environments with smooth camera transitions</p>
-            </div>
+              </div>
             <div style={{
               padding: '2rem',
-              background: 'rgba(78, 205, 196, 0.1)',
-              borderRadius: '20px',
-              border: '1px solid rgba(78, 205, 196, 0.3)'
-            }}>
+              background: 'linear-gradient(135deg, rgba(78, 205, 196, 0.15) 0%, rgba(50, 150, 130, 0.1) 100%)',
+                  borderRadius: '25px',
+              border: '1px solid rgba(78, 205, 196, 0.4)',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 8px 32px rgba(78, 205, 196, 0.2)'
+                }}>
               <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#4ecdc4' }}>Scroll Animation</h3>
               <p style={{ opacity: 0.9 }}>Camera movements synchronized with scroll</p>
-            </div>
+              </div>
             <div style={{
               padding: '2rem',
-              background: 'rgba(255, 230, 109, 0.1)',
-              borderRadius: '20px',
-              border: '1px solid rgba(255, 230, 109, 0.3)'
+              background: 'linear-gradient(135deg, rgba(255, 230, 109, 0.15) 0%, rgba(255, 200, 50, 0.1) 100%)',
+              borderRadius: '25px',
+              border: '1px solid rgba(255, 230, 109, 0.4)',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 8px 32px rgba(255, 230, 109, 0.2)'
             }}>
               <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#ffe66d' }}>Performance</h3>
               <p style={{ opacity: 0.9 }}>Optimized for 60fps on all devices</p>
             </div>
             <div style={{
               padding: '2rem',
-              background: 'rgba(0, 255, 255, 0.1)',
-              borderRadius: '20px',
-              border: '1px solid rgba(0, 255, 255, 0.3)'
+              background: 'linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 200, 200, 0.1) 100%)',
+              borderRadius: '25px',
+              border: '1px solid rgba(0, 255, 255, 0.4)',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 8px 32px rgba(0, 255, 255, 0.2)'
             }}>
               <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#00ffff' }}>Interactive</h3>
               <p style={{ opacity: 0.9 }}>Respond to user interactions in real-time</p>
+              </div>
             </div>
           </div>
-        </div>
-      </Html>
+        </Html>
     </group>
   )
 }
@@ -404,7 +480,7 @@ const Page3 = ({ scrollProgress }) => {
   return (
     <group ref={groupRef} position={[0, 80, 0]}>
       <mesh position={[0, 0, 0]}>
-        <planeGeometry args={[14, 10]} />
+        <planeGeometry args={[12, 8]} />
         <meshStandardMaterial 
           color="#16213e"
           transparent
@@ -413,16 +489,34 @@ const Page3 = ({ scrollProgress }) => {
           metalness={0.9}
         />
       </mesh>
+
+      {/* Multi-layer frame for Page 3 */}
+      <mesh position={[0, 0, -0.1]}>
+        <planeGeometry args={[12.3, 8.3]} />
+        <meshBasicMaterial 
+          color="#4ecdc4"
+          transparent
+          opacity={0.15}
+        />
+      </mesh>
+      <mesh position={[0, 0, -0.2]}>
+        <planeGeometry args={[12.6, 8.6]} />
+        <meshBasicMaterial 
+          color="#4ecdc4"
+          transparent
+          opacity={0.08}
+        />
+      </mesh>
       
-      {/* Floating cubes grid */}
-      {[...Array(16)].map((_, i) => {
-        const x = (i % 4 - 1.5) * 2
-        const y = (Math.floor(i / 4) - 1.5) * 1.5
+      {/* Floating cubes grid - adjusted for smaller page */}
+      {[...Array(12)].map((_, i) => {
+        const x = (i % 3 - 1) * 1.8
+        const y = (Math.floor(i / 3) - 1.5) * 1.2
         return (
-          <Box key={i} args={[0.3, 0.3, 0.3]} position={[x, y, 1]}>
+          <Box key={i} args={[0.25, 0.25, 0.25]} position={[x, y, 1]}>
             <meshStandardMaterial 
-              color={`hsl(${i * 20}, 70%, 60%)`} 
-              emissive={`hsl(${i * 20}, 70%, 30%)`}
+              color={`hsl(${i * 25}, 70%, 60%)`} 
+              emissive={`hsl(${i * 25}, 70%, 30%)`}
               emissiveIntensity={0.3}
             />
           </Box>
@@ -433,8 +527,8 @@ const Page3 = ({ scrollProgress }) => {
         position={[0, 0, 0.1]} 
         center
         style={{ 
-          width: '1400px', 
-          height: '1000px', 
+          width: '1200px', 
+          height: '800px', 
           pointerEvents: 'none'
         }}
       >
@@ -445,11 +539,14 @@ const Page3 = ({ scrollProgress }) => {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          background: 'linear-gradient(135deg, rgba(22,33,62,0.9) 0%, rgba(15,25,45,0.9) 100%)',
+          background: 'linear-gradient(135deg, rgba(22,33,62,0.95) 0%, rgba(15,25,45,0.95) 100%)',
+          backdropFilter: 'blur(20px)',
           color: 'white',
           fontFamily: '"SF Pro Display", system-ui, sans-serif',
-          padding: '60px',
-          borderRadius: '20px'
+          padding: '50px',
+          borderRadius: '30px',
+          border: '1px solid rgba(78, 205, 196, 0.3)',
+          boxShadow: '0 25px 50px rgba(0, 150, 150, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
         }}>
           <h2 style={{
             fontSize: '3rem',
@@ -477,23 +574,26 @@ const Page3 = ({ scrollProgress }) => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '1.5rem 2rem',
-                background: `rgba(${i * 60 + 100}, ${i * 40 + 150}, ${i * 50 + 200}, 0.1)`,
-                borderRadius: '15px',
-                border: `1px solid rgba(${i * 60 + 100}, ${i * 40 + 150}, ${i * 50 + 200}, 0.3)`
+                background: `linear-gradient(135deg, rgba(${i * 40 + 78}, ${i * 30 + 205}, ${i * 35 + 196}, 0.15) 0%, rgba(${i * 25 + 50}, ${i * 20 + 150}, ${i * 25 + 130}, 0.1) 100%)`,
+                borderRadius: '20px',
+                border: `1px solid rgba(${i * 40 + 78}, ${i * 30 + 205}, ${i * 35 + 196}, 0.4)`,
+                backdropFilter: 'blur(10px)',
+                boxShadow: `0 8px 32px rgba(${i * 40 + 78}, ${i * 30 + 205}, ${i * 35 + 196}, 0.2)`
               }}>
                 <div>
-                  <h3 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>{service.title}</h3>
+                  <h3 style={{ fontSize: '1.4rem', marginBottom: '0.5rem', color: `hsl(${i * 30 + 180}, 70%, 70%)` }}>{service.title}</h3>
                   <p style={{ opacity: 0.8 }}>{service.desc}</p>
                 </div>
                 <div style={{
                   width: '60px',
                   height: '60px',
                   borderRadius: '50%',
-                  background: `linear-gradient(45deg, hsl(${i * 60 + 180}, 70%, 50%), hsl(${i * 60 + 220}, 70%, 60%))`,
+                  background: `linear-gradient(45deg, hsl(${i * 30 + 180}, 80%, 50%), hsl(${i * 30 + 200}, 80%, 60%))`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '1.5rem'
+                  fontSize: '1.5rem',
+                  boxShadow: `0 4px 16px rgba(${i * 40 + 78}, ${i * 30 + 205}, ${i * 35 + 196}, 0.3)`
                 }}>
                   {i + 1}
                 </div>
@@ -509,17 +609,17 @@ const Page3 = ({ scrollProgress }) => {
 // Page 4: Contact
 const Page4 = ({ scrollProgress }) => {
   const groupRef = useRef()
-  
+
   useFrame((state) => {
     if (groupRef.current) {
       groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.4) * 0.15
     }
   })
-  
+
   return (
     <group ref={groupRef} position={[-80, 0, 0]}>
       <mesh position={[0, 0, 0]}>
-        <planeGeometry args={[14, 10]} />
+        <planeGeometry args={[12, 8]} />
         <meshStandardMaterial 
           color="#0f3460"
           transparent
@@ -529,19 +629,37 @@ const Page4 = ({ scrollProgress }) => {
         />
       </mesh>
       
-      {/* Spiral particles */}
-      {[...Array(30)].map((_, i) => {
-        const angle = (i / 30) * Math.PI * 4
-        const radius = 3 + i * 0.1
+      {/* Multi-layer frame for Page 4 */}
+      <mesh position={[0, 0, -0.1]}>
+        <planeGeometry args={[12.3, 8.3]} />
+        <meshBasicMaterial 
+          color="#ffe66d"
+          transparent
+          opacity={0.15}
+        />
+      </mesh>
+      <mesh position={[0, 0, -0.2]}>
+        <planeGeometry args={[12.6, 8.6]} />
+        <meshBasicMaterial 
+          color="#ffe66d"
+          transparent
+          opacity={0.08}
+        />
+      </mesh>
+      
+      {/* Spiral particles - adjusted for smaller page */}
+      {[...Array(25)].map((_, i) => {
+        const angle = (i / 25) * Math.PI * 3.5
+        const radius = 2.5 + i * 0.08
         const x = Math.cos(angle) * radius
         const y = Math.sin(angle) * radius
-        const z = (i - 15) * 0.1
+        const z = (i - 12) * 0.08
         
         return (
-          <Sphere key={i} args={[0.05]} position={[x, y, z]}>
+          <Sphere key={i} args={[0.04]} position={[x, y, z]}>
             <meshBasicMaterial 
-              color={`hsl(${i * 12}, 80%, 70%)`}
-              transparent
+              color={`hsl(${i * 14}, 80%, 70%)`}
+        transparent 
               opacity={0.8}
             />
           </Sphere>
@@ -552,8 +670,8 @@ const Page4 = ({ scrollProgress }) => {
         position={[0, 0, 0.1]} 
         center
         style={{ 
-          width: '1400px', 
-          height: '1000px', 
+          width: '1200px', 
+          height: '800px', 
           pointerEvents: 'auto'
         }}
       >
@@ -564,11 +682,14 @@ const Page4 = ({ scrollProgress }) => {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          background: 'linear-gradient(135deg, rgba(15,52,96,0.9) 0%, rgba(10,35,65,0.9) 100%)',
+          background: 'linear-gradient(135deg, rgba(15,52,96,0.95) 0%, rgba(10,35,65,0.95) 100%)',
+          backdropFilter: 'blur(20px)',
           color: 'white',
           fontFamily: '"SF Pro Display", system-ui, sans-serif',
-          padding: '60px',
-          borderRadius: '20px'
+          padding: '50px',
+          borderRadius: '30px',
+          border: '1px solid rgba(255, 230, 109, 0.3)',
+          boxShadow: '0 25px 50px rgba(255, 200, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
         }}>
           <h2 style={{
             fontSize: '3rem',
@@ -602,35 +723,42 @@ const Page4 = ({ scrollProgress }) => {
                   placeholder="Your Name"
                   style={{
                     padding: '1rem',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '15px',
+                    border: '1px solid rgba(255, 230, 109, 0.4)',
+                    background: 'rgba(255, 230, 109, 0.1)',
+                    backdropFilter: 'blur(10px)',
                     color: 'white',
-                    fontSize: '1rem'
+                    fontSize: '1rem',
+                    boxShadow: '0 4px 16px rgba(255, 230, 109, 0.2)'
                   }}
-                />
+      />
                 <input 
                   type="email" 
                   placeholder="Your Email"
                   style={{
                     padding: '1rem',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '15px',
+                    border: '1px solid rgba(255, 230, 109, 0.4)',
+                    background: 'rgba(255, 230, 109, 0.1)',
+                    backdropFilter: 'blur(10px)',
                     color: 'white',
-                    fontSize: '1rem'
+                    fontSize: '1rem',
+                    boxShadow: '0 4px 16px rgba(255, 230, 109, 0.2)'
                   }}
                 />
                 <button style={{
                   padding: '1rem 2rem',
                   borderRadius: '25px',
-                  border: '2px solid #ffe66d',
-                  background: 'rgba(255, 230, 109, 0.1)',
+                  border: '2px solid transparent',
+                  borderImage: 'linear-gradient(45deg, #ffe66d, #ffb347) 1',
+                  background: 'linear-gradient(135deg, rgba(255, 230, 109, 0.15) 0%, rgba(255, 179, 71, 0.1) 100%)',
+                  backdropFilter: 'blur(10px)',
                   color: '#ffe66d',
                   fontSize: '1rem',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 8px 32px rgba(255, 230, 109, 0.3)'
                 }}>
                   Send Message
                 </button>
@@ -659,17 +787,17 @@ const FuturisticWebsite = () => {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
-  
+
   return (
     <div style={{ position: 'relative' }}>
       {/* Canvas for 3D scene */}
-      <div style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
         width: '100vw', 
-        height: '100vh',
-        zIndex: 1 
+          height: '100vh',
+          zIndex: 1
       }}>
                  <Canvas
           camera={{ position: [0, 0, 25], fov: 75 }}
@@ -679,21 +807,21 @@ const FuturisticWebsite = () => {
           <ambientLight intensity={0.4} />
           {/* Main area lighting */}
           <pointLight position={[0, 0, 20]} intensity={1.2} color="#00ffff" />
-          
+        
           {/* Page-specific lighting */}
           <pointLight position={[80, 0, 10]} intensity={0.8} color="#ff6b6b" />
           <pointLight position={[0, 80, 10]} intensity={0.8} color="#4ecdc4" />
           <pointLight position={[-80, 0, 10]} intensity={0.8} color="#ffe66d" />
-          
+        
           {/* Atmospheric lighting */}
           <spotLight position={[40, 40, 30]} intensity={0.6} color="#a855f7" angle={0.5} />
           <spotLight position={[-40, -40, 30]} intensity={0.6} color="#ec4899" angle={0.5} />
-          
+
           <Environment preset="night" />
           
           <CameraController scrollProgress={scrollProgress} />
           <AnimatedParticles scrollProgress={scrollProgress} />
-          
+
           <Page1 scrollProgress={scrollProgress} />
           <Page2 scrollProgress={scrollProgress} />
           <Page3 scrollProgress={scrollProgress} />
@@ -733,25 +861,25 @@ const FuturisticWebsite = () => {
             }}
           />
         ))}
-      </div>
-      
+        </div>
+
       {/* Scroll hint */}
       <div style={{
         position: 'fixed',
         bottom: '2rem',
-        left: '50%',
-        transform: 'translateX(-50%)',
+            left: '50%',
+            transform: 'translateX(-50%)',
         zIndex: 10,
-        color: 'white',
+            color: 'white',
         fontSize: '0.9rem',
         opacity: scrollProgress < 0.05 ? 1 : Math.max(0, 1 - scrollProgress * 10),
         transition: 'opacity 0.5s ease',
         textAlign: 'center'
-      }}>
+        }}>
         <div style={{ marginBottom: '0.5rem' }}>Scroll to navigate</div>
         <div style={{ fontSize: '1.5rem', animation: 'bounce 2s infinite' }}>↓</div>
       </div>
-      
+
       <style>{`
         @keyframes bounce {
           0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
