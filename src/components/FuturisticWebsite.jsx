@@ -774,6 +774,7 @@ const Page4 = ({ scrollProgress }) => {
 // Main Component
 const FuturisticWebsite = () => {
   const [scrollProgress, setScrollProgress] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
   
   useEffect(() => {
     const handleScroll = () => {
@@ -788,8 +789,80 @@ const FuturisticWebsite = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    // Check on mount
+    checkMobile()
+    
+    // Listen for resize events
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
     <div style={{ position: 'relative' }}>
+      {/* Mobile Warning Overlay */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%)',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          textAlign: 'center',
+          padding: '2rem',
+          color: 'white'
+        }}>
+          <div style={{
+            maxWidth: '400px',
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '20px',
+            padding: '3rem 2rem',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)'
+          }}>
+            <div style={{
+              fontSize: '3rem',
+              marginBottom: '1rem'
+            }}>
+              📱
+            </div>
+            <h2 style={{
+              fontSize: '1.5rem',
+              marginBottom: '1rem',
+              color: '#00ffff'
+            }}>
+              Mobile Not Supported
+            </h2>
+            <p style={{
+              fontSize: '1rem',
+              lineHeight: '1.6',
+              color: 'rgba(255, 255, 255, 0.8)',
+              marginBottom: '1.5rem'
+            }}>
+              Sorry, this 3D website is not compatible with small screens. 
+              Please visit on a desktop or tablet for the best experience.
+            </p>
+            <div style={{
+              fontSize: '0.9rem',
+              color: 'rgba(255, 255, 255, 0.6)'
+            }}>
+              Minimum width required: 768px
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Canvas for 3D scene */}
       <div style={{
         position: 'fixed',
@@ -797,7 +870,8 @@ const FuturisticWebsite = () => {
         left: 0,
         width: '100vw', 
           height: '100vh',
-          zIndex: 1
+          zIndex: 1,
+          display: isMobile ? 'none' : 'block'
       }}>
                  <Canvas
           camera={{ position: [0, 0, 25], fov: 75 }}
@@ -830,55 +904,61 @@ const FuturisticWebsite = () => {
       </div>
       
       {/* Scroll content for height */}
-      <div style={{ 
-        height: '600vh', 
-        position: 'relative', 
-        zIndex: 2, 
-        pointerEvents: 'none' 
-      }} />
+      {!isMobile && (
+        <div style={{ 
+          height: '600vh', 
+          position: 'relative', 
+          zIndex: 2, 
+          pointerEvents: 'none' 
+        }} />
+      )}
       
       {/* Progress indicator */}
-      <div style={{
-        position: 'fixed',
-        top: '50%',
-        right: '2rem',
-        transform: 'translateY(-50%)',
-        zIndex: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem'
-      }}>
-        {[0, 1, 2, 3].map((page) => (
-          <div
-            key={page}
-            style={{
-              width: '4px',
-              height: '40px',
-              background: scrollProgress * 3 >= page ? '#00ffff' : 'rgba(255, 255, 255, 0.3)',
-              borderRadius: '2px',
-              transition: 'all 0.5s ease',
-              boxShadow: scrollProgress * 3 >= page ? '0 0 10px #00ffff' : 'none'
-            }}
-          />
-        ))}
+      {!isMobile && (
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          right: '2rem',
+          transform: 'translateY(-50%)',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}>
+          {[0, 1, 2, 3].map((page) => (
+            <div
+              key={page}
+              style={{
+                width: '4px',
+                height: '40px',
+                background: scrollProgress * 3 >= page ? '#00ffff' : 'rgba(255, 255, 255, 0.3)',
+                borderRadius: '2px',
+                transition: 'all 0.5s ease',
+                boxShadow: scrollProgress * 3 >= page ? '0 0 10px #00ffff' : 'none'
+              }}
+            />
+          ))}
         </div>
+      )}
 
       {/* Scroll hint */}
-      <div style={{
-        position: 'fixed',
-        bottom: '2rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-        zIndex: 10,
-            color: 'white',
-        fontSize: '0.9rem',
-        opacity: scrollProgress < 0.05 ? 1 : Math.max(0, 1 - scrollProgress * 10),
-        transition: 'opacity 0.5s ease',
-        textAlign: 'center'
-        }}>
-        <div style={{ marginBottom: '0.5rem' }}>Scroll to navigate</div>
-        <div style={{ fontSize: '1.5rem', animation: 'bounce 2s infinite' }}>↓</div>
-      </div>
+      {!isMobile && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+          zIndex: 10,
+              color: 'white',
+          fontSize: '0.9rem',
+          opacity: scrollProgress < 0.05 ? 1 : Math.max(0, 1 - scrollProgress * 10),
+          transition: 'opacity 0.5s ease',
+          textAlign: 'center'
+          }}>
+          <div style={{ marginBottom: '0.5rem' }}>Scroll to navigate</div>
+          <div style={{ fontSize: '1.5rem', animation: 'bounce 2s infinite' }}>↓</div>
+        </div>
+      )}
 
       <style>{`
         @keyframes bounce {
